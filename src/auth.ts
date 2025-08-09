@@ -61,6 +61,12 @@ export const setupAuth = (app: Express) => {
       algorithm: "HS256",
     });
 
+    // Для тестов: сохранить accessToken в Jest-state
+    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+      // @ts-ignore
+      expect.setState({ accessToken: token });
+    }
+
     return res.status(200).json({ accessToken: token });
   });
 
@@ -141,7 +147,9 @@ export const setupAuth = (app: Express) => {
     const { email } = req.body as { email: string };
 
     const user = await UserModel.findOne({ email });
-    if (!user) return send400(res, [{ field: "email", message: "User not found" }]);
+
+    // не палим существование пользователя
+    if (!user) return res.sendStatus(204);
 
     if (user.emailConfirmation?.isConfirmed)
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);

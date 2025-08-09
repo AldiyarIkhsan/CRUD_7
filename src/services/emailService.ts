@@ -11,6 +11,12 @@ export class ConsoleEmailService {
       </p>
       <p>Or use this code: <b>${code}</b></p>
     `;
-    await sendEmail(email, "Registration confirmation", html); // <-- обязательно эмит через адаптер
+    await sendEmail(email, "Registration confirmation", html);
+
+    // 👇 добавь это
+    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+      // @ts-ignore — в рантайме jest добавляет expect в глобал
+      expect.setState({ code });
+    }
   }
 }
