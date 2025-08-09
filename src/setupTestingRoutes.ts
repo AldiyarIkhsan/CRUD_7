@@ -12,9 +12,9 @@ export const setupTestingRoutes = (app: Express) => {
       BlogModel.deleteMany({}),
       PostModel.deleteMany({}),
       UserModel.deleteMany({}),
-      CommentModel.deleteMany({}), // <-- добавь
+      CommentModel.deleteMany({}),   // <-- добавить
     ]);
-    clearOutbox(); // <-- очистка «почтового ящика»
+    clearOutbox();                   // <-- добавить
     res.sendStatus(204);
   });
 };

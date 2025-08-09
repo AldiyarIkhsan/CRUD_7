@@ -11,6 +11,6 @@ export class ConsoleEmailService {
       </p>
       <p>Or use this code: <b>${code}</b></p>
     `;
-    await sendEmail(email, "Registration confirmation", html); // <-- ВАЖНО
+    await sendEmail(email, "Registration confirmation", html); // <-- обязательно эмит через адаптер
   }
 }
