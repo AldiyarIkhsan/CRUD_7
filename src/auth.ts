@@ -86,13 +86,9 @@ export const setupAuth = (app: Express) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));
 
-    const { login, email, password } = req.body as {
-      login: string;
-      email: string;
-      password: string;
-    };
+    const { login, email, password } = req.body as { login: string; email: string; password: string };
 
-    // уникальность login/email
+    // Уникальность login/email
     const byLogin = await UserModel.findOne({ login });
     if (byLogin) return send400(res, [{ field: "login", message: "login should be unique" }]);
     const byEmail = await UserModel.findOne({ email });
@@ -102,7 +98,7 @@ export const setupAuth = (app: Express) => {
     const expirationDate = hoursFromNow(1);
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await UserModel.create({
+    const newUser = await UserModel.create({
       login,
       email,
       passwordHash,
@@ -110,10 +106,9 @@ export const setupAuth = (app: Express) => {
     });
 
     await emailService.sendRegistration(email, confirmationCode, process.env.FRONT_URL);
-    return res.sendStatus(204); // без тела
+    return res.sendStatus(204); // Без тела
   });
 
-  // POST /auth/registration-confirmation
   app.post("/auth/registration-confirmation", vConfirm, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));
@@ -124,15 +119,15 @@ export const setupAuth = (app: Express) => {
     if (!user || !user.emailConfirmation)
       return send400(res, [{ field: "code", message: "Confirmation code is incorrect" }]);
 
-    // если уже подтвержден — даём ровно эту ошибку (для теста)
+    // Если уже подтвержден — даём ошибку
     if (user.emailConfirmation.isConfirmed)
       return send400(res, [{ field: "code", message: "Email already confirmed" }]);
 
-    // срок действия
+    // Проверка срока действия кода
     if (!user.emailConfirmation.expirationDate || user.emailConfirmation.expirationDate < new Date())
       return send400(res, [{ field: "code", message: "Confirmation code is expired" }]);
 
-    // подтверждаем; код/срок НЕ удаляем — нужно для повторного запроса с тем же кодом
+    // Подтверждаем
     user.emailConfirmation.isConfirmed = true;
     await user.save();
 
@@ -148,8 +143,7 @@ export const setupAuth = (app: Express) => {
 
     const user = await UserModel.findOne({ email });
 
-    // не палим существование пользователя
-    if (!user) return res.sendStatus(204);
+    if (!user) return res.sendStatus(204); // Если пользователя нет, ничего не возвращаем
 
     if (user.emailConfirmation?.isConfirmed)
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
