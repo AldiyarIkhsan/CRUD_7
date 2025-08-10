@@ -9,7 +9,6 @@ import { PostModel } from "./models/PostModel";
 import { BlogModel } from "./models/BlogModel";
 
 export const setupPosts = (app: Express) => {
-  // Публичные GET
   app.get("/posts", async (req: Request, res: Response) => {
     const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query as any;
     const page = Number(pageNumber) || 1;
@@ -54,7 +53,6 @@ export const setupPosts = (app: Express) => {
     });
   });
 
-  // Админские: Basic auth
   app.post(
     "/blogs/:blogId/posts",
     basicAuthMiddleware,

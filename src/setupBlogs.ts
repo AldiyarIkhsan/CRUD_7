@@ -4,7 +4,6 @@ import { BlogModel } from "./models/BlogModel";
 import { PostModel } from "./models/PostModel";
 
 export const setupBlogs = (app: Express) => {
-  // Публичные GET
   app.get("/blogs", async (req: Request, res: Response) => {
     const {
       searchNameTerm = "",
@@ -77,7 +76,6 @@ export const setupBlogs = (app: Express) => {
     });
   });
 
-  // Админские: Basic auth
   app.post(
     "/blogs",
     basicAuthMiddleware,

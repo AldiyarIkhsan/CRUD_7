@@ -4,7 +4,6 @@ import { CommentModel } from "./models/CommentModel";
 import { PostModel } from "./models/PostModel";
 import { UserModel } from "./models/UserModel";
 
-// helper: проверка владельца
 async function ensureOwner(userId: string, commentId: string) {
   const c = await CommentModel.findById(commentId);
   if (!c) return { status: 404 as const };
@@ -13,7 +12,6 @@ async function ensureOwner(userId: string, commentId: string) {
 }
 
 export const setupComments = (app: Express) => {
-  // GET /posts/:postId/comments
   app.get("/posts/:postId/comments", async (req: Request, res: Response) => {
     const { postId } = req.params;
     const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query;
@@ -44,7 +42,6 @@ export const setupComments = (app: Express) => {
     });
   });
 
-  // POST /posts/:postId/comments (Bearer)
   app.post(
     "/posts/:postId/comments",
     authMiddleware,
@@ -75,7 +72,6 @@ export const setupComments = (app: Express) => {
     },
   );
 
-  // GET /comments/:id
   app.get("/comments/:id", async (req: Request, res: Response) => {
     const c = await CommentModel.findById(req.params.id);
     if (!c) return res.sendStatus(404);
@@ -87,7 +83,6 @@ export const setupComments = (app: Express) => {
     });
   });
 
-  // PUT /comments/:commentId (Bearer, только автор)
   app.put(
     "/comments/:commentId",
     authMiddleware,
@@ -102,7 +97,6 @@ export const setupComments = (app: Express) => {
     },
   );
 
-  // DELETE /comments/:commentId (Bearer, только автор)
   app.delete("/comments/:commentId", authMiddleware, async (req: Request, res: Response) => {
     const check = await ensureOwner((req as any).userId, req.params.commentId);
     if (check.status !== 200) return res.sendStatus(check.status);

@@ -1,4 +1,3 @@
-// auth.ts
 import { Express, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import bcrypt from "bcrypt";
@@ -11,7 +10,6 @@ import { setJestState } from "./utils/jestState";
 
 const emailService = new ConsoleEmailService();
 
-// ===== validators
 const vLogin = [
   body("loginOrEmail").trim().notEmpty().withMessage("loginOrEmail is required"),
   body("password").trim().notEmpty().withMessage("password is required"),
@@ -24,7 +22,6 @@ const vReg = [
 const vConfirm = [body("code").trim().notEmpty().withMessage("code is required")];
 const vResend = [body("email").trim().isEmail().withMessage("invalid email")];
 
-// ===== helpers
 const send400 = (res: Response, errors: { field: string; message: string }[]) =>
   res.status(400).json({ errorsMessages: errors });
 
@@ -37,7 +34,6 @@ const mapValidationErrors = (req: Request) => {
 };
 
 export const setupAuth = (app: Express) => {
-  // POST /auth/login
   app.post("/auth/login", vLogin, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));
@@ -71,7 +67,6 @@ export const setupAuth = (app: Express) => {
     return res.status(200).json({ accessToken: token });
   });
 
-  // GET /auth/me
   app.get("/auth/me", authMiddleware, async (req: Request, res: Response) => {
     const user = await UserModel.findById((req as any).userId);
     if (!user) return res.sendStatus(401);
@@ -82,7 +77,6 @@ export const setupAuth = (app: Express) => {
     });
   });
 
-  // POST /auth/registration
   app.post("/auth/registration", vReg, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));
@@ -111,7 +105,6 @@ export const setupAuth = (app: Express) => {
     return res.sendStatus(204);
   });
 
-  // POST /auth/registration-confirmation
   app.post("/auth/registration-confirmation", vConfirm, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));
@@ -134,7 +127,6 @@ export const setupAuth = (app: Express) => {
     return res.sendStatus(204);
   });
 
-  // POST /auth/registration-email-resending
   app.post("/auth/registration-email-resending", vResend, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapValidationErrors(req));

@@ -5,7 +5,6 @@ import { basicAuthMiddleware, userValidationRules, handleInputErrors } from "./m
 import { setJestState } from "./utils/jestState";
 
 export const setupUsers = (app: Express) => {
-  // GET /users (Basic)
   app.get("/users", basicAuthMiddleware, async (req: Request, res: Response) => {
     const { searchLoginTerm, searchEmailTerm, pageNumber, pageSize, sortBy, sortDirection } = req.query;
     const page = Number(pageNumber) > 0 ? Number(pageNumber) : 1;
@@ -37,7 +36,6 @@ export const setupUsers = (app: Express) => {
     });
   });
 
-  // POST /users (Basic) — сразу подтверждён
   app.post(
     "/users",
     basicAuthMiddleware,
@@ -58,7 +56,6 @@ export const setupUsers = (app: Express) => {
         emailConfirmation: { isConfirmed: true }, // без присваивания null полям
       });
 
-      // Store user credentials in Jest state
       setJestState('newUserCreds', { login, email, password });
 
       return res.status(201).json({
@@ -70,7 +67,6 @@ export const setupUsers = (app: Express) => {
     },
   );
 
-  // DELETE /users/:id (Basic)
   app.delete("/users/:id", basicAuthMiddleware, async (req: Request, res: Response) => {
     const deleted = await UserModel.findByIdAndDelete(req.params.id);
     if (!deleted) return res.sendStatus(404);
