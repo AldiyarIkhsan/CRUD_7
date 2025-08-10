@@ -1,18 +1,33 @@
-declare global {
-  var __JEST_STATE__: Record<string, any>;
-}
+// utils/jestState.ts
+// Работает в Jest: кладём/читаем через expect.setState / expect.getState.
+// Вне Jest — тихо ничего не делаем.
+declare const expect: any;
 
-export const setJestState = (key: string, value: any) => {
-  if (!global.__JEST_STATE__) {
-    global.__JEST_STATE__ = {};
+type KV = Record<string, any>;
+
+// set: setJestState('key', value) или setJestState({ key: value, ... })
+export const setJestState = (keyOrObj: string | KV, value?: any) => {
+  if (typeof expect?.setState !== "function") return;
+  if (typeof keyOrObj === "string") {
+    expect.setState({ [keyOrObj]: value });
+  } else {
+    expect.setState(keyOrObj);
   }
-  global.__JEST_STATE__[key] = value;
 };
 
-export const getJestState = (key: string) => {
-  return global.__JEST_STATE__?.[key];
+// get: getJestState() -> весь стейт, getJestState('key') -> значение
+export const getJestState = (key?: string) => {
+  if (typeof expect?.getState !== "function") return undefined;
+  const state = expect.getState() as KV;
+  return key ? state?.[key] : state;
 };
 
+// очистка ключей, которые читают тесты
 export const clearJestState = () => {
-  global.__JEST_STATE__ = {};
+  if (typeof expect?.setState !== "function") return;
+  expect.setState({
+    code: undefined,
+    accessToken: undefined,
+    newUserCreds: undefined,
+  });
 };
