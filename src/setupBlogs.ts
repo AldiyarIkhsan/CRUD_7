@@ -101,7 +101,7 @@ export const setupBlogs = (app: Express) => {
     blogValidationRules,
     handleInputErrors,
     async (req: Request, res: Response) => {
-      const updated = await BlogModel.findByIdAndUpdate(req.params.id, req.body);
+      const updated = await BlogModel.findByIdAndUpdate(req.params.id, req.body, { runValidators: true });
       if (!updated) return res.sendStatus(404);
       res.sendStatus(204);
     },

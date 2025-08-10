@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { body, check, validationResult } from "express-validator";
+import { body, check, validationResult, type ValidationError } from "express-validator";
 import jwt from "jsonwebtoken";
 
 // ===== Basic auth для админ-CRUD =====
@@ -26,16 +26,29 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-// ===== Валидация и формат ошибок =====
+// ===== Валидация и формат ошибок (кросс-версионно для v6/v7) =====
+const getField = (e: ValidationError): string => {
+  if ("path" in (e as any) && typeof (e as any).path === "string") return (e as any).path; // v7
+  if ("param" in (e as any) && typeof (e as any).param === "string") return (e as any).param; // v6
+  if (e.type === "unknown_fields" && Array.isArray((e as any).fields) && (e as any).fields.length) {
+    return (e as any).fields[0]; // первый неизвестный field
+  }
+  return "unknown";
+};
+
 export const handleInputErrors = (req: Request, res: Response, next: NextFunction) => {
   const result = validationResult(req);
   if (result.isEmpty()) return next();
-  const errorsMessages = result.array({ onlyFirstError: true }).map((e) => ({
-    message: e.msg,
-    field: e.type === "field" ? e.path : "unknown",
+
+  const errorsMessages = result.array({ onlyFirstError: true }).map((e: ValidationError) => ({
+    message: (e as any).msg,
+    field: getField(e),
   }));
+
   return res.status(400).json({ errorsMessages });
 };
+
+// ===== Правила валидации =====
 
 // Блоги
 export const blogValidationRules = [

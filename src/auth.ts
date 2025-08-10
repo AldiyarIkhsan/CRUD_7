@@ -29,7 +29,7 @@ const mapValidationErrors = (req: Request) => {
   const vr = validationResult(req);
   return vr.array({ onlyFirstError: true }).map((e: any) => ({
     message: e.msg,
-    field: e.path ?? e.param ?? "unknown",
+    field: e.param ?? "unknown",
   }));
 };
 
@@ -53,14 +53,10 @@ export const setupAuth = (app: Express) => {
     const expiresIn: SignOptions["expiresIn"] =
       (process.env.JWT_EXPIRES as unknown as SignOptions["expiresIn"]) ?? "1h";
 
-    const token = jwt.sign(
-      { userId: user._id.toString() },
-      secret,
-      {
-        expiresIn,
-        algorithm: "HS256",
-      }
-    );
+    const token = jwt.sign({ userId: user._id.toString() }, secret, {
+      expiresIn,
+      algorithm: "HS256",
+    });
 
     setJestState("accessToken", token);
 
@@ -122,7 +118,11 @@ export const setupAuth = (app: Express) => {
       return send400(res, [{ field: "code", message: "Confirmation code is expired" }]);
 
     user.emailConfirmation.isConfirmed = true;
+    user.emailConfirmation.confirmationCode = null as any;
+    user.emailConfirmation.expirationDate = null as any;
     await user.save();
+
+    return res.sendStatus(204);
 
     return res.sendStatus(204);
   });
