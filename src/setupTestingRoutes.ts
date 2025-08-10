@@ -1,4 +1,3 @@
-// setupTestingRoutes.ts
 import { Express, Request, Response } from "express";
 import { BlogModel } from "./models/BlogModel";
 import { PostModel } from "./models/PostModel";
@@ -13,10 +12,10 @@ export const setupTestingRoutes = (app: Express) => {
       BlogModel.deleteMany({}),
       PostModel.deleteMany({}),
       UserModel.deleteMany({}),
-      CommentModel.deleteMany({}), // <-- добавить
+      CommentModel.deleteMany({}),
     ]);
-    clearOutbox(); // <-- добавить
-    clearJestState(); // Clear Jest state as well
+    clearOutbox();
+    clearJestState();
     res.sendStatus(204);
   });
 };

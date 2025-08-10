@@ -1,4 +1,3 @@
-// services/emailService.ts
 import { sendEmail } from "../adapters/emailAdapter";
 
 export class ConsoleEmailService {
@@ -11,6 +10,6 @@ export class ConsoleEmailService {
       </p>
       <p>Or use this code: <b>${code}</b></p>
     `;
-    await sendEmail(email, "Registration confirmation", html); // <-- обязательно эмит через адаптер
+    await sendEmail(email, "Registration confirmation", html);
   }
 }
