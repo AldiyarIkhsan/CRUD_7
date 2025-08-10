@@ -144,15 +144,26 @@ export const setupAuth = (app: Express) => {
 
     const user = await UserModel.findOne({ email });
 
+    console.log('Email resending request for:', email);
+    console.log('User found:', !!user);
+    if (user) {
+      console.log('User emailConfirmation:', user.emailConfirmation);
+      console.log('Is confirmed:', user.emailConfirmation?.isConfirmed);
+    }
+
     // If user doesn't exist, return 400 error
     if (!user) {
+      console.log('User not found, returning 400');
       return send400(res, [{ field: "email", message: "User with this email doesn't exist" }]);
     }
 
     // If email is already confirmed, return 400 error
     if (user.emailConfirmation?.isConfirmed) {
+      console.log('Email already confirmed, returning 400');
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
     }
+
+    console.log('Proceeding with email resend');
 
     if (!user.emailConfirmation) (user as any).emailConfirmation = { isConfirmed: false };
 
