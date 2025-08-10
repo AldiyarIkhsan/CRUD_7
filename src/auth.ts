@@ -7,6 +7,7 @@ import { UserModel } from "./models/UserModel";
 import { authMiddleware } from "./middleware";
 import { ConsoleEmailService } from "./services/emailService";
 import { makeConfirmationCode, hoursFromNow } from "./utils/auth";
+import { setJestState } from "./utils/jestState";
 
 const emailService = new ConsoleEmailService();
 
@@ -61,11 +62,8 @@ export const setupAuth = (app: Express) => {
       algorithm: "HS256",
     });
 
-    // Для тестов: сохранить accessToken в Jest-state
-    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
-      // @ts-ignore
-      expect.setState({ accessToken: token });
-    }
+    // Store access token in Jest state
+    setJestState('accessToken', token);
 
     return res.status(200).json({ accessToken: token });
   });
@@ -105,11 +103,8 @@ export const setupAuth = (app: Express) => {
       emailConfirmation: { isConfirmed: false, confirmationCode, expirationDate },
     });
 
-    // Store confirmation code in Jest state for tests
-    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
-      // @ts-ignore
-      expect.setState({ code: confirmationCode });
-    }
+    // Store confirmation code in Jest state
+    setJestState('code', confirmationCode);
 
     await emailService.sendRegistration(email, confirmationCode, process.env.FRONT_URL);
     return res.sendStatus(204); // Без тела
@@ -166,11 +161,8 @@ export const setupAuth = (app: Express) => {
     (user.emailConfirmation as any).expirationDate = hoursFromNow(1);
     await user.save();
 
-    // Store confirmation code in Jest state for tests
-    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
-      // @ts-ignore
-      expect.setState({ code: code });
-    }
+    // Store confirmation code in Jest state
+    setJestState('code', code);
 
     await emailService.sendRegistration(user.email, code, process.env.FRONT_URL);
     return res.sendStatus(204);

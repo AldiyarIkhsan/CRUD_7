@@ -15,8 +15,7 @@ app.use(express.json());
 
 app.get("/", (_req, res) => res.send("API is running"));
 
-setupTestingRoutes(app); // внутри тоже добавь prefixed-вариант
-
+setupTestingRoutes(app);
 setupBlogs(app);
 setupPosts(app);
 setupUsers(app);
