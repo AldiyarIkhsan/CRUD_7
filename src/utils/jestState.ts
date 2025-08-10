@@ -19,18 +19,6 @@ export const setJestState = (key: string, value: any) => {
     global.__JEST_STATE__[key] = value;
     console.log('Global state after setting:', global.__JEST_STATE__);
   }
-  
-  // Also try to set in expect state if available
-  try {
-    // @ts-ignore
-    if (typeof expect !== 'undefined' && expect.setState) {
-      // @ts-ignore
-      expect.setState({ [key]: value });
-      console.log('Expect state set successfully');
-    }
-  } catch (e) {
-    console.log('Error setting expect state:', e);
-  }
 };
 
 // Helper function to get Jest state
@@ -44,19 +32,6 @@ export const getJestState = (key: string) => {
     return value;
   }
   
-  // Try expect state if available
-  try {
-    // @ts-ignore
-    if (typeof expect !== 'undefined' && expect.getState) {
-      // @ts-ignore
-      const value = expect.getState()[key];
-      console.log('Found in expect state:', value);
-      return value;
-    }
-  } catch (e) {
-    console.log('Error getting expect state:', e);
-  }
-  
   console.log('No value found for key:', key);
   return undefined;
 };
@@ -67,15 +42,5 @@ export const clearJestState = () => {
   
   if (typeof global !== 'undefined') {
     global.__JEST_STATE__ = {};
-  }
-  
-  try {
-    // @ts-ignore
-    if (typeof expect !== 'undefined' && expect.setState) {
-      // @ts-ignore
-      expect.setState({});
-    }
-  } catch (e) {
-    // Ignore errors if expect is not available
   }
 };
