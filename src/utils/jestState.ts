@@ -1,34 +1,37 @@
-// utils/jestState.ts
-// Работает в Jest: кладём/читаем через expect.setState / expect.getState.
-// Вне Jest (на прод-сервере) — тихо ничего не делаем.
+declare global {
+  var __JEST_STATE__: any;
+}
 
-declare const expect: any;
+if (typeof global !== 'undefined') {
+  global.__JEST_STATE__ = global.__JEST_STATE__ || {};
+}
 
-type KV = Record<string, any>;
-
-// set: setJestState('key', value) или setJestState({ key: value, ... })
-export const setJestState = (keyOrObj: string | KV, value?: any) => {
-  if (typeof expect?.setState !== "function") return;
-  if (typeof keyOrObj === "string") {
-    expect.setState({ [keyOrObj]: value });
-  } else {
-    expect.setState(keyOrObj);
+export const setJestState = (key: string, value: any) => {
+  console.log('Setting Jest state:', key, value);
+  
+  if (typeof global !== 'undefined') {
+    global.__JEST_STATE__[key] = value;
+    console.log('Global state after setting:', global.__JEST_STATE__);
   }
 };
 
-// get: getJestState() -> весь стейт, getJestState('key') -> значение
-export const getJestState = (key?: string) => {
-  if (typeof expect?.getState !== "function") return undefined;
-  const state = expect.getState() as KV;
-  return key ? state?.[key] : state;
+export const getJestState = (key: string) => {
+  console.log('Getting Jest state for key:', key);
+  
+  if (typeof global !== 'undefined' && global.__JEST_STATE__) {
+    const value = global.__JEST_STATE__[key];
+    console.log('Found in global state:', value);
+    return value;
+  }
+
+  console.log('No value found for key:', key);
+  return undefined;
 };
 
-// очистка ключей, которые читают тесты
 export const clearJestState = () => {
-  if (typeof expect?.setState !== "function") return;
-  expect.setState({
-    code: undefined,
-    accessToken: undefined,
-    newUserCreds: undefined,
-  });
+  console.log('Clearing Jest state');
+  
+  if (typeof global !== 'undefined') {
+    global.__JEST_STATE__ = {};
+  }
 };
