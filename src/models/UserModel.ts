@@ -15,4 +15,9 @@ const userSchema = new mongoose.Schema(
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
+// Add indexes for efficient queries
+userSchema.index({ login: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ "emailConfirmation.confirmationCode": 1 });
+
 export const UserModel = mongoose.model("User", userSchema);

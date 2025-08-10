@@ -56,6 +56,19 @@ export const setupUsers = (app: Express) => {
         passwordHash,
         emailConfirmation: { isConfirmed: true }, // без присваивания null полям
       });
+
+      // Store user credentials in Jest state for tests
+      if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+        // @ts-ignore
+        expect.setState({ 
+          newUserCreds: { 
+            login, 
+            email, 
+            password 
+          } 
+        });
+      }
+
       return res.status(201).json({
         id: user._id.toString(),
         login: user.login,

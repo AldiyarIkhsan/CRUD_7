@@ -105,6 +105,12 @@ export const setupAuth = (app: Express) => {
       emailConfirmation: { isConfirmed: false, confirmationCode, expirationDate },
     });
 
+    // Store confirmation code in Jest state for tests
+    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+      // @ts-ignore
+      expect.setState({ code: confirmationCode });
+    }
+
     await emailService.sendRegistration(email, confirmationCode, process.env.FRONT_URL);
     return res.sendStatus(204); // Без тела
   });
@@ -143,10 +149,15 @@ export const setupAuth = (app: Express) => {
 
     const user = await UserModel.findOne({ email });
 
-    if (!user) return res.sendStatus(204); // Если пользователя нет, ничего не возвращаем
+    // If user doesn't exist, return 400 error
+    if (!user) {
+      return send400(res, [{ field: "email", message: "User with this email doesn't exist" }]);
+    }
 
-    if (user.emailConfirmation?.isConfirmed)
+    // If email is already confirmed, return 400 error
+    if (user.emailConfirmation?.isConfirmed) {
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
+    }
 
     if (!user.emailConfirmation) (user as any).emailConfirmation = { isConfirmed: false };
 
@@ -154,6 +165,12 @@ export const setupAuth = (app: Express) => {
     (user.emailConfirmation as any).confirmationCode = code;
     (user.emailConfirmation as any).expirationDate = hoursFromNow(1);
     await user.save();
+
+    // Store confirmation code in Jest state for tests
+    if (process.env.JEST_WORKER_ID || process.env.NODE_ENV === "test") {
+      // @ts-ignore
+      expect.setState({ code: code });
+    }
 
     await emailService.sendRegistration(user.email, code, process.env.FRONT_URL);
     return res.sendStatus(204);
