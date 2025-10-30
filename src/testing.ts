@@ -1,5 +1,5 @@
-import { BlogModel } from './models/BlogModel'; 
-import { PostModel } from './models/PostModel'; 
+import { BlogModel } from './models/BlogModel';
+import { PostModel } from './models/PostModel';
 
 export const clearPosts = async () => {
   await PostModel.deleteMany({});

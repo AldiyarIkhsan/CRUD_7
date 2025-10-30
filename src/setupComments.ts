@@ -14,17 +14,17 @@ async function ensureOwner(userId: string, commentId: string) {
 export const setupComments = (app: Express) => {
   app.get("/posts/:postId/comments", async (req: Request, res: Response) => {
     const { postId } = req.params;
-    const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query;
+    const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query as any;
 
     const post = await PostModel.findById(postId);
     if (!post) return res.sendStatus(404);
 
-    const filter = { postId };
+    const filter = { postId: post._id };
     const totalCount = await CommentModel.countDocuments(filter);
     const pagesCount = Math.ceil(totalCount / Number(pageSize));
 
     const items = await CommentModel.find(filter)
-      .sort({ [sortBy as string]: sortDirection === "asc" ? 1 : -1 })
+      .sort({ [String(sortBy)]: sortDirection === "asc" ? 1 : -1 })
       .skip((Number(pageNumber) - 1) * Number(pageSize))
       .limit(Number(pageSize));
 

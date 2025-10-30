@@ -11,14 +11,19 @@ export const setupBlogs = (app: Express) => {
       pageSize = 10,
       sortBy = "createdAt",
       sortDirection = "desc",
-    } = req.query;
-    const filter = { name: { $regex: searchNameTerm as string, $options: "i" } };
+    } = req.query as any;
+
+    const filter = searchNameTerm
+      ? { name: { $regex: String(searchNameTerm), $options: "i" } }
+      : {};
+
     const totalCount = await BlogModel.countDocuments(filter);
     const pagesCount = Math.ceil(totalCount / Number(pageSize));
     const blogs = await BlogModel.find(filter)
-      .sort({ [sortBy as string]: sortDirection === "asc" ? 1 : -1 })
+      .sort({ [String(sortBy)]: sortDirection === "asc" ? 1 : -1 })
       .skip((Number(pageNumber) - 1) * Number(pageSize))
       .limit(Number(pageSize));
+
     res.status(200).json({
       pagesCount,
       page: Number(pageNumber),
@@ -49,16 +54,18 @@ export const setupBlogs = (app: Express) => {
   });
 
   app.get("/blogs/:id/posts", async (req: Request, res: Response) => {
-    const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query;
+    const { pageNumber = 1, pageSize = 10, sortBy = "createdAt", sortDirection = "desc" } = req.query as any;
     const blog = await BlogModel.findById(req.params.id);
     if (!blog) return res.sendStatus(404);
-    const filter = { blogId: req.params.id };
+
+    const filter = { blogId: blog._id };
     const totalCount = await PostModel.countDocuments(filter);
     const pagesCount = Math.ceil(totalCount / Number(pageSize));
     const posts = await PostModel.find(filter)
-      .sort({ [sortBy as string]: sortDirection === "asc" ? 1 : -1 })
+      .sort({ [String(sortBy)]: sortDirection === "asc" ? 1 : -1 })
       .skip((Number(pageNumber) - 1) * Number(pageSize))
       .limit(Number(pageSize));
+
     res.status(200).json({
       pagesCount,
       page: Number(pageNumber),

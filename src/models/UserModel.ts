@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
       expirationDate: { type: Date, default: null },
     },
   },
-  { timestamps: { createdAt: true, updatedAt: false } },
+  { timestamps: { createdAt: true, updatedAt: false } }
 );
 
 userSchema.index({ login: 1 }, { unique: true });

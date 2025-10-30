@@ -20,7 +20,7 @@ export const setupUsers = (app: Express) => {
     const filter = or.length ? { $or: or } : {};
 
     const totalCount = await UserModel.countDocuments(filter);
-    const pagesCount = Math.max(1, Math.ceil(totalCount / size));
+    const pagesCount = Math.ceil(totalCount / size);
     const users = await UserModel.find(filter)
       .sort({ [sortField]: sortDirVal })
       .skip((page - 1) * size)
@@ -53,10 +53,10 @@ export const setupUsers = (app: Express) => {
         login,
         email,
         passwordHash,
-        emailConfirmation: { isConfirmed: true }, // без присваивания null полям
+        emailConfirmation: { isConfirmed: true }, // админ создал — подтверждение не нужно
       });
 
-      setJestState('newUserCreds', { login, email, password });
+      setJestState("newUserCreds", { login, email, password });
 
       return res.status(201).json({
         id: user._id.toString(),

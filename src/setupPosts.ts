@@ -18,7 +18,7 @@ export const setupPosts = (app: Express) => {
     const totalCount = await PostModel.countDocuments();
     const pagesCount = Math.ceil(totalCount / size);
     const posts = await PostModel.find()
-      .sort({ [sortBy as string]: direction })
+      .sort({ [String(sortBy)]: direction })
       .skip((page - 1) * size)
       .limit(size);
 
