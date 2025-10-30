@@ -1,3 +1,4 @@
+// src/server.ts
 import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./db";
@@ -10,7 +11,7 @@ import { setupComments } from "./setupComments";
 
 dotenv.config();
 
-export const app = express();
+const app = express();
 app.use(express.json());
 
 app.get("/", (_req, res) => res.send("API is running"));
@@ -22,11 +23,14 @@ setupUsers(app);
 setupAuth(app);
 setupComments(app);
 
+// подключение к Mongo
 connectDB();
 
-const shouldListen = require.main === module || process.env.RUN_STANDALONE === "1";
-
-if (shouldListen) {
+// 🚀 слушаем порт только ЛОКАЛЬНО
+if (require.main === module || process.env.RUN_STANDALONE === "1") {
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`🚀 Server is running on port ${port}`));
 }
+
+// 👇 обязательно нужно добавить для Vercel
+export default app;
