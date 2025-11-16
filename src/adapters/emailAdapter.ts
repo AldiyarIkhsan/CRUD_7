@@ -1,16 +1,16 @@
 import { EventEmitter } from "events";
 import { setJestState } from "../utils/jestState";
 
-// 🔔 Эмиттер событий для тестов (можно оставить без изменений)
+// 🔔 Эмиттер событий для тестов
 export const emailBus = new EventEmitter();
 
 // Тип письма
 type SentEmail = { to: string; subject: string; html: string };
 
-// Память для всех отправленных писем (для Jest / автотестов)
+// Память для писем (используется автотестами)
 const outbox: SentEmail[] = [];
 
-// Очистка outbox
+// Очистка outbox (автотесты вызывают /testing/all-data)
 export const clearOutbox = () => {
   outbox.length = 0;
 };
@@ -20,23 +20,33 @@ export async function sendEmail(to: string, subject: string, html: string) {
   const sentEmail = { to, subject, html };
   outbox.push(sentEmail);
 
-  // 🔍 Вывод письма прямо в консоль (для ручной проверки)
-  console.log("📧 EMAIL SENT =====================================");
+  // Лог для debug (не мешает автотестам)
+  console.log("========================================");
+  console.log("📧 EMAIL SENT");
   console.log("To:", to);
   console.log("Subject:", subject);
-  console.log("HTML:\n", html);
-  console.log("===================================================");
+  console.log("HTML:");
+  console.log(html);
+  console.log("========================================");
 
-  // 🧩 Извлекаем code из ?code=... или 6-значного кода между тегами <b>...</b>
-  const codeMatch = html.match(/code=([^"']+)/) || html.match(/>(\d{6})</);
+  // 🧩 Попытка извлечения confirmation code:
+  //
+  // 1) ловим код из URL:  ...?code=xxxx
+  // 2) ловим <b>xxxx</b> — здесь может быть UUID или число
+  //
+  const codeMatch =
+    html.match(/code=([^"']+)/) || // code from URL
+    html.match(/<b>([^<]+)<\/b>/); // code inside <b>...</b>
+
   if (codeMatch && codeMatch[1]) {
-    setJestState("code", codeMatch[1]);
-    console.log("✅ Extracted confirmation code:", codeMatch[1]);
+    const code = codeMatch[1];
+    setJestState("code", code);
+    console.log("✅ Extracted confirmation code:", code);
   } else {
     console.log("⚠️ Confirmation code not found in email HTML!");
   }
 
-  // 📡 Отправляем событие о письме (для автотестов)
+  // 📡 Сообщаем тестам, что письмо отправлено
   emailBus.emit("email:sent", sentEmail);
 
   return sentEmail;
