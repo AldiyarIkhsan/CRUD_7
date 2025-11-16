@@ -10,7 +10,7 @@ import { authMiddleware } from "./middleware";
 
 const emailService = new ConsoleEmailService();
 
-// ========== Validation rules ==========
+// ===== VALIDATION =====
 
 const vRegistration = [
   body("login").trim().isLength({ min: 3, max: 10 }).withMessage("login length 3-10"),
@@ -19,15 +19,12 @@ const vRegistration = [
 ];
 
 const vConfirm = [body("code").trim().notEmpty().withMessage("code is required")];
-
 const vResend = [body("email").trim().isEmail().withMessage("invalid email")];
 
 const vLogin = [
   body("loginOrEmail").trim().notEmpty().withMessage("required"),
   body("password").trim().notEmpty().withMessage("required"),
 ];
-
-// ========== Helpers ==========
 
 const send400 = (res: Response, errors: any[]) => res.status(400).json({ errorsMessages: errors });
 
@@ -39,10 +36,10 @@ const mapErrors = (req: Request) =>
       field: (e as any).path ?? "unknown",
     }));
 
-// ========== Main ==========
+// ===== MAIN =====
 
 export const setupAuth = (app: Express) => {
-  // -------- LOGIN --------
+  // ---------- LOGIN ----------
   app.post("/auth/login", vLogin, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapErrors(req));
@@ -62,22 +59,23 @@ export const setupAuth = (app: Express) => {
     const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
 
     setJestState("accessToken", token);
+
     return res.status(200).json({ accessToken: token });
   });
 
-  // -------- ME --------
+  // ---------- ME ----------
   app.get("/auth/me", authMiddleware, async (req: any, res: Response) => {
     const user = await UserModel.findById(req.userId);
     if (!user) return res.sendStatus(401);
 
-    res.status(200).json({
+    return res.status(200).json({
       email: user.email,
       login: user.login,
       userId: user._id.toString(),
     });
   });
 
-  // -------- REGISTRATION --------
+  // ---------- REGISTRATION ----------
   app.post("/auth/registration", vRegistration, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapErrors(req));
@@ -86,6 +84,7 @@ export const setupAuth = (app: Express) => {
 
     if (await UserModel.findOne({ login }))
       return send400(res, [{ field: "login", message: "login should be unique" }]);
+
     if (await UserModel.findOne({ email }))
       return send400(res, [{ field: "email", message: "email should be unique" }]);
 
@@ -104,13 +103,15 @@ export const setupAuth = (app: Express) => {
       },
     });
 
+    // сохранить для Jest
     setJestState("code", code);
+
     await emailService.sendRegistration(email, code, process.env.FRONT_URL);
 
     return res.sendStatus(204);
   });
 
-  // -------- CONFIRM CODE --------
+  // ---------- CONFIRM ----------
   app.post("/auth/registration-confirmation", vConfirm, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapErrors(req));
@@ -138,7 +139,7 @@ export const setupAuth = (app: Express) => {
     return res.sendStatus(204);
   });
 
-  // -------- RESEND --------
+  // ---------- RESEND ----------
   app.post("/auth/registration-email-resending", vResend, async (req: Request, res: Response) => {
     const vr = validationResult(req);
     if (!vr.isEmpty()) return send400(res, mapErrors(req));
@@ -146,6 +147,7 @@ export const setupAuth = (app: Express) => {
     const { email } = req.body;
 
     const user = await UserModel.findOne({ email });
+
     if (!user) return send400(res, [{ field: "email", message: "User with this email doesn't exist" }]);
 
     if (user.emailConfirmation?.isConfirmed)
@@ -160,6 +162,7 @@ export const setupAuth = (app: Express) => {
     await user.save();
 
     setJestState("code", code);
+
     await emailService.sendRegistration(email, code, process.env.FRONT_URL);
 
     return res.sendStatus(204);

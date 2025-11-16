@@ -1,15 +1,16 @@
 import { sendEmail } from "../adapters/emailAdapter";
 
 export class ConsoleEmailService {
-  async sendRegistration(email: string, code: string, frontUrl?: string) {
-    const url = `${frontUrl ?? "https://somesite.com"}` + `/confirm-registration?code=${encodeURIComponent(code)}`;
+  async sendRegistration(email: string, code: string, frontUrl?: string | null) {
+    const base = frontUrl ?? "https://somesite.com";
+
+    const url = `${base}/confirm-email?code=${encodeURIComponent(code)}`;
 
     const html = `
       <h1>Thank for your registration</h1>
       <p>To finish registration please follow the link below:
         <a href="${url}">complete registration</a>
       </p>
-      <p>Or use this code: <b>${code}</b></p>
     `;
 
     await sendEmail(email, "Registration confirmation", html);
