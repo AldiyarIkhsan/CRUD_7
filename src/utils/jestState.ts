@@ -1,40 +1,32 @@
-// ✅ Безопасная заглушка для Node.js окружения
-// Jest автоматически определяет глобальный expect,
-// но при запуске через ts-node / node его нет — поэтому делаем fallback.
-const expect: any = (global as any).expect ?? {};
+// Используем глобальный jest-expect, который предоставляет setState/getState
+const jestExpect = (global as any).expect;
 
 type KV = Record<string, any>;
 
-/**
- * Сохраняет временное значение в Jest state (используется в автотестах).
- * В обычном окружении (Node) просто ничего не делает.
- */
+// Сохранение значения в Jest state
 export const setJestState = (keyOrObj: string | KV, value?: any) => {
-  if (typeof expect?.setState !== "function") return;
+  if (!jestExpect || typeof jestExpect.setState !== "function") return;
+
   if (typeof keyOrObj === "string") {
-    expect.setState({ [keyOrObj]: value });
+    jestExpect.setState({ [keyOrObj]: value });
   } else {
-    expect.setState(keyOrObj);
+    jestExpect.setState(keyOrObj);
   }
 };
 
-/**
- * Получает значение из Jest state.
- * В Node без Jest возвращает undefined.
- */
+// Получение значения из Jest state
 export const getJestState = (key?: string) => {
-  if (typeof expect?.getState !== "function") return undefined;
-  const state = expect.getState() as KV;
-  return key ? state?.[key] : state;
+  if (!jestExpect || typeof jestExpect.getState !== "function") return undefined;
+
+  const state = jestExpect.getState() as KV;
+  return key ? state[key] : state;
 };
 
-/**
- * Очищает все временные значения Jest state.
- * Без Jest — просто ничего не делает.
- */
+// Очистка Jest state
 export const clearJestState = () => {
-  if (typeof expect?.setState !== "function") return;
-  expect.setState({
+  if (!jestExpect || typeof jestExpect.setState !== "function") return;
+
+  jestExpect.setState({
     code: undefined,
     accessToken: undefined,
     newUserCreds: undefined,
