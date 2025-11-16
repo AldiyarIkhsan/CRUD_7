@@ -3,14 +3,20 @@ import { setJestState } from "../utils/jestState";
 
 export const emailBus = new EventEmitter();
 
-type SentEmail = { to: string; subject: string; html: string };
+type SentEmail = {
+  to: string;
+  subject: string;
+  html: string;
+};
 
 const outbox: SentEmail[] = [];
 
+// Автотесты очищают письма через /testing/all-data
 export const clearOutbox = () => {
   outbox.length = 0;
 };
 
+// Ключевая функция: должна работать НА 100% так
 export async function sendEmail(to: string, subject: string, html: string) {
   const sentEmail = { to, subject, html };
   outbox.push(sentEmail);
@@ -23,20 +29,31 @@ export async function sendEmail(to: string, subject: string, html: string) {
   console.log(html);
   console.log("========================================");
 
-  // 🔥 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ
+  // ================================
+  // ВАЖНО: извлечение confirmation code
+  // ================================
+  //
+  // HW7-тесты принимают два формата:
+  // 1) https://site.com?code=XXXX
+  // 2) <b>XXXX</b>
+  //
   const codeMatch =
-    html.match(/code=([^"&]+)/) || // правильный match по ссылке
-    html.match(/<b>([^<]+)<\/b>/);
+    html.match(/code=([^"&]+)/) || // из URL
+    html.match(/<b>([^<]+)<\/b>/); // в <b>...</b>
 
   if (codeMatch && codeMatch[1]) {
     const code = codeMatch[1].trim();
+    console.log("✅ Extracted code:", code);
     setJestState("code", code);
-    console.log("✅ Extracted confirmation code:", code);
   } else {
-    console.log("⚠️ Confirmation code not found in email HTML!");
+    console.log("⚠️ Code NOT FOUND in email HTML!");
   }
 
+  // Сообщаем тестам, что письмо отправлено
   emailBus.emit("email:sent", sentEmail);
 
   return sentEmail;
 }
+
+// Экспортируем обязательно!
+export { outbox };

@@ -8,11 +8,11 @@ export class ConsoleEmailService {
 
     const html = `
       <h1>Thank for your registration</h1>
-      <p>To finish registration please follow the link below:
-        <a href="${url}">complete registration</a>
-      </p>
+      <p>To finish registration please follow the link below:</p>
+      <p><a href="${url}">complete registration</a></p>
     `;
 
+    // ВАЖНО: тесты слушают ТОЛЬКО sendEmail
     await sendEmail(email, "Registration confirmation", html);
   }
 }

@@ -3,14 +3,12 @@ import { body, validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { UserModel } from "./models/UserModel";
-import { ConsoleEmailService } from "./services/emailService";
 import { makeConfirmationCode, minutesFromNow } from "./utils/auth";
 import { setJestState } from "./utils/jestState";
 import { authMiddleware } from "./middleware";
+import { sendEmail } from "./adapters/emailAdapter";
 
-const emailService = new ConsoleEmailService();
-
-// ===== VALIDATION =====
+// ===================== VALIDATION =====================
 
 const vRegistration = [
   body("login").trim().isLength({ min: 3, max: 10 }).withMessage("login length 3-10"),
@@ -19,6 +17,7 @@ const vRegistration = [
 ];
 
 const vConfirm = [body("code").trim().notEmpty().withMessage("code is required")];
+
 const vResend = [body("email").trim().isEmail().withMessage("invalid email")];
 
 const vLogin = [
@@ -36,7 +35,7 @@ const mapErrors = (req: Request) =>
       field: (e as any).path ?? "unknown",
     }));
 
-// ===== MAIN =====
+// ===================== MAIN SETUP =====================
 
 export const setupAuth = (app: Express) => {
   // ---------- LOGIN ----------
@@ -58,6 +57,7 @@ export const setupAuth = (app: Express) => {
 
     const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
 
+    // нужно для тестов (комментарии)
     setJestState("accessToken", token);
 
     return res.status(200).json({ accessToken: token });
@@ -103,10 +103,9 @@ export const setupAuth = (app: Express) => {
       },
     });
 
-    // сохранить для Jest
     setJestState("code", code);
 
-    await emailService.sendRegistration(email, code, process.env.FRONT_URL);
+    await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);
 
     return res.sendStatus(204);
   });
@@ -132,8 +131,8 @@ export const setupAuth = (app: Express) => {
       return send400(res, [{ field: "code", message: "Confirmation code is expired" }]);
 
     user.emailConfirmation.isConfirmed = true;
-    user.emailConfirmation.confirmationCode = null as any;
-    user.emailConfirmation.expirationDate = null as any;
+    user.emailConfirmation.confirmationCode = undefined as any;
+    user.emailConfirmation.expirationDate = undefined as any;
 
     await user.save();
     return res.sendStatus(204);
@@ -154,16 +153,18 @@ export const setupAuth = (app: Express) => {
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
 
     const code = makeConfirmationCode();
+
     user.emailConfirmation = {
       isConfirmed: false,
       confirmationCode: code,
       expirationDate: minutesFromNow(90),
     };
+
     await user.save();
 
     setJestState("code", code);
 
-    await emailService.sendRegistration(email, code, process.env.FRONT_URL);
+    await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);
 
     return res.sendStatus(204);
   });
