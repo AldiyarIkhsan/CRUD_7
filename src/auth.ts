@@ -103,6 +103,7 @@ export const setupAuth = (app: Express) => {
       },
     });
 
+    // Устанавливаем код ДО отправки email, чтобы он был доступен тестам
     setJestState("code", code);
 
     await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);
@@ -149,8 +150,11 @@ export const setupAuth = (app: Express) => {
 
     if (!user) return send400(res, [{ field: "email", message: "User with this email doesn't exist" }]);
 
-    if (user.emailConfirmation?.isConfirmed)
+    // Проверяем, что email еще не подтвержден
+    // Если emailConfirmation существует и isConfirmed === true, возвращаем ошибку
+    if (user.emailConfirmation?.isConfirmed) {
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
+    }
 
     const code = makeConfirmationCode();
 
@@ -162,6 +166,7 @@ export const setupAuth = (app: Express) => {
 
     await user.save();
 
+    // Устанавливаем код ДО отправки email, чтобы он был доступен тестам
     setJestState("code", code);
 
     await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);

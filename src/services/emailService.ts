@@ -1,3 +1,4 @@
+import { error } from "console";
 import { sendEmail } from "../adapters/emailAdapter";
 
 export class ConsoleEmailService {
@@ -13,6 +14,10 @@ export class ConsoleEmailService {
     `;
 
     // ВАЖНО: тесты слушают ТОЛЬКО sendEmail
-    await sendEmail(email, "Registration confirmation", html);
+    try {
+      await sendEmail(email, "Registration confirmation", html);
+    } catch {
+      console.log(error);
+    }
   }
 }
