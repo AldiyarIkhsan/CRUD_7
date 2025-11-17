@@ -6,7 +6,8 @@ import { UserModel } from "./models/UserModel";
 import { makeConfirmationCode, minutesFromNow } from "./utils/auth";
 import { setJestState } from "./utils/jestState";
 import { authMiddleware } from "./middleware";
-import { sendEmail } from "./adapters/emailAdapter";
+import { RealEmailService } from "./services/emailService";
+const emailService = new RealEmailService();
 
 // ===================== VALIDATION =====================
 
@@ -35,6 +36,21 @@ const mapErrors = (req: Request) =>
       field: (e as any).path ?? "unknown",
     }));
 
+// ===================== HTML EMAIL GENERATOR =====================
+
+function makeRegistrationEmailHtml(code: string) {
+  const encoded = encodeURIComponent(code);
+  return `
+    <h1>Thank for your registration</h1>
+    <p>To finish registration please follow the link below:</p>
+    <p>
+      <a href="https://some-front.com/confirm-registration?code=${encoded}">
+        complete registration
+      </a>
+    </p>
+  `;
+}
+
 // ===================== MAIN SETUP =====================
 
 export const setupAuth = (app: Express) => {
@@ -57,9 +73,7 @@ export const setupAuth = (app: Express) => {
 
     const token = jwt.sign({ userId: user._id.toString() }, process.env.JWT_SECRET || "secret", { expiresIn: "1h" });
 
-    // нужно для тестов (комментарии)
     setJestState("accessToken", token);
-
     return res.status(200).json({ accessToken: token });
   });
 
@@ -88,7 +102,7 @@ export const setupAuth = (app: Express) => {
     if (await UserModel.findOne({ email }))
       return send400(res, [{ field: "email", message: "email should be unique" }]);
 
-    const code = makeConfirmationCode();
+    const confirmationCode = makeConfirmationCode();
     const expirationDate = minutesFromNow(90);
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -98,19 +112,15 @@ export const setupAuth = (app: Express) => {
       passwordHash,
       emailConfirmation: {
         isConfirmed: false,
-        confirmationCode: code,
+        confirmationCode,
         expirationDate,
       },
     });
 
-    setJestState("code", code);
+    setJestState("code", confirmationCode);
 
-    await sendEmail(
-      email,
-      "Email confirmation",
-      `<h1>Confirm email</h1><p>Your code:
-       <a href='https://somesite.com/confirm-email?code=${code}'>complete registration</a></p>`,
-    );
+    const html = makeRegistrationEmailHtml(confirmationCode);
+    await emailService.sendRegistration(email, confirmationCode);
 
     return res.sendStatus(204);
   });
@@ -151,29 +161,25 @@ export const setupAuth = (app: Express) => {
     const { email } = req.body;
 
     const user = await UserModel.findOne({ email });
-
     if (!user) return send400(res, [{ field: "email", message: "User with this email doesn't exist" }]);
 
-    // Проверяем, что email еще не подтвержден
-    // Если emailConfirmation существует и isConfirmed === true, возвращаем ошибку
-    if (user.emailConfirmation?.isConfirmed) {
+    if (user.emailConfirmation?.isConfirmed)
       return send400(res, [{ field: "email", message: "Email is already confirmed" }]);
-    }
 
-    const code = makeConfirmationCode();
+    const newCode = makeConfirmationCode();
 
     user.emailConfirmation = {
       isConfirmed: false,
-      confirmationCode: code,
+      confirmationCode: newCode,
       expirationDate: minutesFromNow(90),
     };
 
     await user.save();
 
-    // Устанавливаем код ДО отправки email, чтобы он был доступен тестам
-    setJestState("code", code);
+    setJestState("code", newCode);
 
-    await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);
+    const html = makeRegistrationEmailHtml(newCode);
+    await emailService.sendRegistration(email, newCode);
 
     return res.sendStatus(204);
   });
