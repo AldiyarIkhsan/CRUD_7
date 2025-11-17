@@ -3,7 +3,6 @@ import { BlogModel } from "./models/BlogModel";
 import { PostModel } from "./models/PostModel";
 import { UserModel } from "./models/UserModel";
 import { CommentModel } from "./models/CommentModel";
-import { clearOutbox } from "./adapters/emailAdapter";
 import { clearJestState } from "./utils/jestState";
 
 export const setupTestingRoutes = (app: Express) => {
@@ -14,7 +13,6 @@ export const setupTestingRoutes = (app: Express) => {
       UserModel.deleteMany({}),
       CommentModel.deleteMany({}),
     ]);
-    clearOutbox();
     clearJestState();
     res.sendStatus(204);
   });
