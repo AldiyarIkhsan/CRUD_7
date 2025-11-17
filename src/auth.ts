@@ -103,10 +103,14 @@ export const setupAuth = (app: Express) => {
       },
     });
 
-    // Устанавливаем код ДО отправки email, чтобы он был доступен тестам
     setJestState("code", code);
 
-    await sendEmail(email, "Email confirmation", `<h1>Confirm email</h1><p>Your code: <b>${code}</b></p>`);
+    await sendEmail(
+      email,
+      "Email confirmation",
+      `<h1>Confirm email</h1><p>Your code:
+       <a href='https://somesite.com/confirm-email?code=${code}'>complete registration</a></p>`,
+    );
 
     return res.sendStatus(204);
   });
